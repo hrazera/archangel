@@ -23,7 +23,10 @@ def loadFile(filename):
     arr = []
     configFile = open(filename)
     for line in configFile:
-        if line[0] == '#':
+        line = line.strip()
+        if line == '':
+            continue
+        elif line[0] == '#':
             continue
         elif line[0:9] == '.Include<':
             arr += loadFile(line[9:-1])

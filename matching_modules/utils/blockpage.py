@@ -34,10 +34,6 @@ class BlockPage:
         args += "&criteria="
         args += data.criteria
         res.set_enc_status(' '.join(res.enc_res_status))
-        #for h in res.enc_res_headers:
-        #    for v in res.enc_res_headers[h]:
-        #        res.set_enc_header(h, v)
-        # Get blockpage contents
         bpContents = urllib2.urlopen(self.blockUrl + args).read()
         res.set_enc_header("content-length", str(len(bpContents)))
         res.set_enc_header("content-type", "text/html")

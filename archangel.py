@@ -4,6 +4,46 @@ import random
 import SocketServer
 
 from pyicap import *
+from ConfigParser import SafeConfigParser
+
+# TODO: eventually have this set by the makefile
+CONFIGFILE = '/home/justinschw/Documents/development/archangel/archangel.conf'
+parser = SafeConfigParser()
+parser.read(CONFIGFILE)
+
+http_handlers = {}
+http_scanners = {}
+content_scanners = {}
+http_req_scanners = []
+http_res_scanners = []
+content_req_scanners = []
+content_res_scanners = []
+
+# Load handlers
+for handler_name, class_name in parser.items('http_handlers'):
+    mod = __import__('matching_modules.utils.' + handler_name)
+    mod_path = 'mod.utils.' + handler_name + "." + class_name
+    http_handlers[handler_name] = eval(mod_path + '(parser)')
+
+# Load scanners
+def load_http_scanner(scanner_name, handler_name):
+    mod = __import__('matching_modules.' + scanner_name)
+    prefix = 'mod.' + scanner_name
+    initstr = prefix + '.init(parser, http_handlers["' + handler_name + '"])'
+    eval(initstr)
+    scan = eval(prefix + '.scan')
+    stop_after_match = eval(prefix + '.stop_after_match')
+    http_scanners[scanner_name] = (scan, stop_after_match)
+
+for scanner_name, handler_name in parser.items('http_req_scanners'):
+    if not scanner_name in http_scanners.keys():
+        load_http_scanner(scanner_name, handler_name)
+    http_req_scanners.append(scanner_name)
+
+for scanner_name, handler_name in parser.items('http_res_scanners'):
+    if not scanner_name in http_scanners.keys():
+        load_http_scanner(scanner_name, handler_name)
+    http_res_scanners.append(scanner_name)
 
 class ThreadingSimpleServer(SocketServer.ThreadingMixIn, ICAPServer):
     pass

@@ -1,0 +1,13 @@
+TODO:
+
+Need to add preview capabilities. We should scan the preview first, and if there is no match, call cont() and get the
+rest of the message.
+
+Need to have a threshold for scanning size. Basically if the content is less than that threshold, then we can load it
+all into memory, scan, and handle it. If it exceeds the threshold, then we need to load it chunk by chunk and scan
+it that way, writing to the client as we go. If a match is found, we need to find a way of blocking. Perhaps a redirect
+is in order.
+
+For large downloads, the content replacement module will just have to do replacements chunk by chunk. This is very
+limiting because of the possibility of variable length regexes, but we will have to assume for now that no such case
+will ever be needed.

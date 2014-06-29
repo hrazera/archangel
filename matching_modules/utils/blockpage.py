@@ -4,8 +4,10 @@ import urllib2
 CHUNK_SIZE = 1024
 
 class BlockPage:
-    def __init__(self, blockUrl):
-        self.blockUrl = blockUrl
+    def __init__(self, parser):
+        ip = parser.get("block_page_config", "blockpageip")
+        port = parser.get("block_page_config", "blockpageport")
+        self.blockUrl = "http://" + ip + ":" + port + "/"
     def handleRequest(self, req, data):
         req.set_icap_response(200)
         # get args for block page

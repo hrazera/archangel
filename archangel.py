@@ -26,24 +26,22 @@ for handler_name, class_name in parser.items('http_handlers'):
     http_handlers[handler_name] = eval(mod_path + '(parser)')
 
 # Load scanners
-def load_http_scanner(scanner_name, handler_name):
+def load_http_scanner(scanner_name, class_name):
     mod = __import__('matching_modules.' + scanner_name)
-    prefix = 'mod.' + scanner_name
-    initstr = prefix + '.init(parser, http_handlers["' + handler_name + '"])'
-    eval(initstr)
-    scan = eval(prefix + '.scan')
-    stop_after_match = eval(prefix + '.stop_after_match')
-    http_scanners[scanner_name] = (scan, stop_after_match)
+    mod_path = 'mod.' + scanner_name + '.' + class_name
+    http_scanners[scanner_name] = eval(mod_path + '(parser)')
 
-for scanner_name, handler_name in parser.items('http_req_scanners'):
+for scanner_name, class_name in parser.items('http_req_scanners'):
     if not scanner_name in http_scanners.keys():
-        load_http_scanner(scanner_name, handler_name)
+        load_http_scanner(scanner_name, class_name)
     http_req_scanners.append(scanner_name)
 
-for scanner_name, handler_name in parser.items('http_res_scanners'):
+for scanner_name, class_name in parser.items('http_res_scanners'):
     if not scanner_name in http_scanners.keys():
-        load_http_scanner(scanner_name, handler_name)
+        load_http_scanner(scanner_name, class_name)
     http_res_scanners.append(scanner_name)
+
+# TODO: load content scanners
 
 class ThreadingSimpleServer(SocketServer.ThreadingMixIn, ICAPServer):
     pass
@@ -63,93 +61,31 @@ class ICAPHandler(BaseICAPRequestHandler):
         self.send_headers(False)
 
     def example_REQMOD(self):
-        self.set_icap_response(200)
-
-        print self.enc_req
-        self.set_enc_request(' '.join(self.enc_req))
-        for h in self.enc_req_headers:
-            for v in self.enc_req_headers[h]:
-                self.set_enc_header(h, v)
-
-        # Copy the request body (in case of a POST for example)
-        if not self.has_body:
-            self.send_headers(False)
-            return
-        if self.preview:
-            prevbuf = ''
-            while True:
-                chunk = self.read_chunk()
-                if chunk == '':
-                    break
-                prevbuf += chunk
-            if self.ieof:
-                self.send_headers(True)
-                if len(prevbuf) > 0:
-                    self.write_chunk(prevbuf)
-                self.write_chunk('')
-                return
-            self.cont()
-            self.send_headers(True)
-            if len(prevbuf) > 0:
-                self.write_chunk(prevbuf)
-            while True:
-                chunk = self.read_chunk()
-                self.write_chunk(chunk)
-                if chunk == '':
-                    break
-        else:
-            self.send_headers(True)
-            while True:
-                chunk = self.read_chunk()
-                self.write_chunk(chunk)
-                if chunk == '':
-                    break
+        for scanner_name in http_req_scanners:
+            scanner = http_scanners[scanner_name]
+            result = scanner.scan(self)
+            if result.matched:
+                http_handlers[scanner.handler].handleRequest(self, result)
+                if scanner.stop_after_scan:
+                    return
+        # TODO:
+        # After this point, we will do content scanning
+        # No match? allow page
+        http_handlers['allowpage'].handleRequest(self, None)
 
     def example_RESPMOD(self):
-        self.set_icap_response(200)
+        for scanner_name in http_res_scanners:
+            scanner = http_scanners[scanner_name]
+            result = scanner.scan(self)
+            if result.matched:
+                http_handlers[scanner.handler].handleResponse(self, result)
+                if scanner.stop_after_scan:
+                    return
+        # TODO:
+        # After this point, we will do content scanning
+        # No match? allow page
+        http_handlers['allowpage'].handleResponse(self, None)
 
-        print self.enc_res_status
-        self.set_enc_status(' '.join(self.enc_res_status))
-        for h in self.enc_res_headers:
-            for v in self.enc_res_headers[h]:
-                self.set_enc_header(h, v)
-
-        # The code below is only copying some data.
-        # Very convoluted for such a simple task.
-        # This thing needs a serious redesign.
-        # Well, without preview, it'd be quite simple...
-        if not self.has_body:
-            self.send_headers(False)
-            return
-        if self.preview:
-            prevbuf = ''
-            while True:
-                chunk = self.read_chunk()
-                if chunk == '':
-                    break
-                prevbuf += chunk
-            if self.ieof:
-                self.send_headers(True)
-                if len(prevbuf) > 0:
-                    self.write_chunk(prevbuf)
-                self.write_chunk('')
-                return
-            self.cont()
-            self.send_headers(True)
-            if len(prevbuf) > 0:
-                self.write_chunk(prevbuf)
-            while True:
-                chunk = self.read_chunk()
-                self.write_chunk(chunk)
-                if chunk == '':
-                    break
-        else:
-            self.send_headers(True)
-            while True:
-                chunk = self.read_chunk()
-                self.write_chunk(chunk)
-                if chunk == '':
-                    break
 
 port = 13440
 

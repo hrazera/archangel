@@ -43,6 +43,12 @@ class Phrase:
             if pos < len(word):
                 match = False
         return match
+    def active(self):
+        for item in self.words:
+            pos = item[1]
+            if pos > 0:
+                return True
+        return False
     def reset(self):
         for i in range(0, len(self.words)):
             item = self.words[i]

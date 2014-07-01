@@ -38,12 +38,12 @@
 
 # The following banned phraselists enable Website Content Labeling systems.  These are enabled by default, but may also be activated using phraselists.  
 
-.Include</etc/dansguardian/lists/phraselists/safelabel/banned>
+#.Include</etc/dansguardian/lists/phraselists/safelabel/banned>
 #.Include</etc/dansguardian/lists/phraselists/rta/banned_portuguese>
 
 # The following banned phraselists are included in the default DG distribution.
 
-.Include</etc/dansguardian/lists/phraselists/pornography/banned>
+#.Include</etc/dansguardian/lists/phraselists/pornography/banned>
 ##.Include</etc/dansguardian/lists/phraselists/pornography/banned_portuguese>
 
 #.Include</etc/dansguardian/lists/phraselists/illegaldrugs/banned>
@@ -53,5 +53,5 @@
 
 #.Include</etc/dansguardian/lists/phraselists/googlesearches/banned>
 
-
+<puppy>,<love>
 

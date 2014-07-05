@@ -16,16 +16,22 @@ class BannedMimeType:
         self.mimetype_list = loadFile(self.config_file)
         self.handler = "blockpage"
         # Stop as soon as a match is found
-        stop_after_match = True
+        self.stop_after_match = True
     # Scan algorithm
-    def scan(self, request):
+    def scan(self, response):
         result = MatchResult()
-        mime_type = response.enc_res_headers['content-type'].strip()
-        if mime_type in mimetype_list:
-            result.matched = True
-            result.category = self.category
-            result.criteria = mime_type
+        if not 'content-type' in response.enc_res_headers:
+            # No mimetype in response
             return result
+        mime_types = response.enc_res_headers['content-type']
+        for mime_type in mime_types:
+            if mime_type.strip() in self.mimetype_list:
+                result.matched = True
+                result.category = self.category
+                result.criteria = mime_type
+                return result
         # No match
         return result
-
+    # Dummy method
+    def reset(self):
+        return

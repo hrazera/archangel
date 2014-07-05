@@ -9,42 +9,34 @@ class BlockPage:
         port = parser.get("block_page_config", "blockpageport")
         self.blockUrl = "http://" + ip + ":" + port + "/"
     def handleRequest(self, req, data):
-        req.set_icap_response(200)
         # get args for block page
         args = "blockpage.php?category="
         args += data.category
         args += "&criteria="
         args += data.criteria
         enc_req = req.enc_req[:]
+        enc_req[0] = 'GET'
         enc_req[1] = self.blockUrl + args
         req.set_enc_request(' '.join(enc_req))
-        for h in req.enc_req_headers:
-            for v in req.enc_req_headers[h]:
-                req.set_enc_header(h, v)
-        # Copy the request body (in case of a POST for example)
-        if not req.has_body:
-            req.send_headers(False)
-            return
-        while True:
-            chunk = req.read_chunk()
-            if chunk == '':
-                break
+        if 'content-type' in req.enc_headers:
+            del req.enc_headers['content-type']
+        if 'content-length' in req.enc_headers:
+            del req.enc_headers['content-length']
+        req.send_headers(False)
     def handleResponse(self, res, data):
-        res.set_icap_response(200)
-        args = "blockpage.php?category="
+        # get args for block page
+        args = 'blockpage.php?category='
         args += data.category
-        args += "&criteria="
+        args += '&criteria='
         args += data.criteria
         res.set_enc_status(' '.join(res.enc_res_status))
         bpContents = urllib2.urlopen(self.blockUrl + args).read()
-        res.set_enc_header("content-length", str(len(bpContents)))
-        res.set_enc_header("content-type", "text/html")
+        res.enc_headers.clear()
+        res.set_enc_header('content-length', str(len(bpContents)))
+        res.set_enc_header('content-type', 'text/html')
+        res.set_enc_header('connection', 'close')
         i = 0
         res.send_headers(True)
-        while True:
-            x = res.read_chunk()
-            if x == '':
-                break
         while i < len(bpContents):
             res.write_chunk(bpContents[i:i+CHUNK_SIZE])
             i += CHUNK_SIZE

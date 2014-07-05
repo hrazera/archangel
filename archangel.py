@@ -12,6 +12,9 @@ parser = SafeConfigParser()
 parser.read(CONFIGFILE)
 
 MAX_FILE_SCAN = parser.get('app_config', 'max_file_scan')
+BLOCKHOST = parser.get('block_page_config', 'blockpageip') + ':' + \
+            parser.get('block_page_config', 'blockpageport')
+SND_CHUNK_SIZE = 8191
 
 http_handlers = {}
 http_scanners = {}
@@ -56,10 +59,57 @@ for scanner_name, class_name in parser.items('content_req_scanners'):
 for scanner_name, class_name in parser.items('content_res_scanners'):
     if not scanner_name in content_scanners.keys():
         load_content_scanner(scanner_name, class_name)
-    content_req_scanners.append(scanner_name)
+    content_res_scanners.append(scanner_name)
 
 class ThreadingSimpleServer(SocketServer.ThreadingMixIn, ICAPServer):
     pass
+
+def read_body(r):
+    body = ''
+    while True:
+        chunk = r.read_chunk()
+        if chunk == '':
+            break
+        body += chunk
+    return body
+
+def scan_http(r, scanner_list, request):
+    # Returns (bool, bool) tuple indicating:
+    # (stop_after_match, modified)
+    modified = False
+    for scanner_name in scanner_list:
+        scanner = http_scanners[scanner_name]
+        result = scanner.scan(r)
+        scanner.reset()
+        if result.matched:
+            if request:
+                http_handlers[scanner.handler].handleRequest(r, result)
+            else:
+                http_handlers[scanner.handler].handleResponse(r, result)
+            if scanner.stop_after_match:
+                return (True, False)
+            else:
+                modified = True
+    return (False, modified)
+
+def scan_content(r, body, scanner_list, request):
+    # Returns (bool, bool) tuple indicating:
+    # (stop_after_match, modified)
+    modified = False
+    for scanner_name in scanner_list:
+        scanner = content_scanners[scanner_name]
+        result = scanner.scan(body)
+        scanner.reset()
+        if result.matched:
+            if request:
+                http_handlers[scanner.handler].handleRequest(r, result)
+            else:
+                http_handlers[scanner.handler].handleResponse(r, result)
+            if scanner.stop_after_match:
+                return (True, False)
+            else:
+                modified = True
+    return (False, modified)
 
 class ICAPHandler(BaseICAPRequestHandler):
 
@@ -76,88 +126,112 @@ class ICAPHandler(BaseICAPRequestHandler):
         self.send_headers(False)
 
     def example_REQMOD(self):
-        modified = False
-        # Need to copy request headers in case there is a modification
+        self.set_icap_response(200)
+
+        self.set_enc_request(' '.join(self.enc_req))
         for h in self.enc_req_headers:
             for v in self.enc_req_headers[h]:
                 self.set_enc_header(h, v)
-        # HTTP scanning
-        for scanner_name in http_req_scanners:
-            scanner = http_scanners[scanner_name]
-            result = scanner.scan(self)
-            if result.matched:
-                http_handlers[scanner.handler].handleRequest(self, result)
-                if scanner.stop_after_match:
-                    return
-                else:
-                    modified = True
+
+        # HTTP Scanning
+        result = scan_http(self, http_req_scanners, True)
+        stop_after_match = result[0]
+        modified = result[1]
+        if stop_after_match:
+            return
+
         # Content scanning
-        chunks = []
-        finished = False
-        len_read = 0
-        len_write = 0
-        # TODO: change this so that we only scan the correct mime type
-        if self.has_body:
-            while True:
-                chunk = self.read_chunk()
-                len_read += len(chunk)
-                if chunk == '':
-                    finished = True
-                    break
-                for scanner_name in content_req_scanners:
-                    scanner = content_scanners[scanner_name]
-                    result = scanner.scan(chunk)
-                    if result.matched:
-                        http_handlers[scanner.handler].handleRequest(self, result)
-                        if scanner.stop_after_match:
-                            scanner.reset()
-                            return
-                        else:
-                            modified = True
-                            # chunk has been modified; get new size
-                            len_write += len(chunk)
-                chunks.append(chunk)
-                if len_read >= MAX_FILE_SCAN:
-                    break
-            # Reset the scanners
-            for scanner_name in content_req_scanners:
-                content_scanners[scanner_name].reset()
-        if modified:
-            # Set new content length
-            length = int(self.enc_req_headers['content-length'])
-            length -= len_read
-            length += len_write
-            self.set_enc_header('content-length', str(length))
-            # Send the modified request
-            self.send_headers(True)
-            for chunk in chunks:
-                self.send_chunk(chunk)
-            if finished:
-                self.send_chunk('')
-            else:
-                while True:
-                    chunk = self.read_chunk()
-                    self.send_chunk(chunk)
-                    if chunk == '':
-                        break
-        else:
-            # No match? allow page
+        body = ''
+        if not self.has_body:
             self.send_headers(False)
-            http_handlers['allowpage'].handleRequest(self, None)
+            return
+        if self.preview:
+            preview = read_body(self)
+            # Preliminary (preview) scan
+            if len(body) > 0:
+                result = scan_content(self, body, content_req_scanners, True)
+                stop_after_match = result[0]
+                modified = result[1]
+                if stop_after_match:
+                    return
+            if self.ieof:
+                body = preview
+            else:
+                if len(preview) > 0:
+                    body += preview
+                self.cont()
+                body += read_body(self)
+        else:
+            body += read_body(self)
+        # Full content scan
+        if len(body) > 0:
+            result = scan_content(self, body, content_req_scanners, True)
+            stop_after_match = result[0]
+            modified = result[1]
+        if stop_after_match:
+            return
+        # Write body
+        i = 0
+        self.send_headers(True)
+        if len(body) > 0:
+            while i < len(body):
+                self.write_chunk(body[i:i+SND_CHUNK_SIZE])
+                i += SND_CHUNK_SIZE
+        self.write_chunk('')
 
     def example_RESPMOD(self):
-        for scanner_name in http_res_scanners:
-            scanner = http_scanners[scanner_name]
-            result = scanner.scan(self)
-            if result.matched:
-                http_handlers[scanner.handler].handleResponse(self, result)
-                if scanner.stop_after_match:
-                    return
-        # TODO:
-        # After this point, we will do content scanning
-        # No match? allow page
-        http_handlers['allowpage'].handleResponse(self, None)
+        self.set_icap_response(200)
 
+        self.set_enc_status(' '.join(self.enc_res_status))
+        for h in self.enc_res_headers:
+            for v in self.enc_res_headers[h]:
+                self.set_enc_header(h, v)
+
+        # HTTP Scanning
+        result = scan_http(self, http_res_scanners, False)
+        stop_after_match = result[0]
+        modified = result[1]
+        if stop_after_match:
+            return
+
+        # Content scanning
+        body = ''
+        if not self.has_body:
+            self.send_headers(False)
+            return
+        if self.preview:
+            preview = read_body(self)
+            # Preliminary scan
+            if len(body) > 0:
+                result = scan_content(self, body, content_res_scanners, False)
+                stop_after_match = result[0]
+                modified = result[1]
+                if stop_after_match:
+                    return
+            if self.ieof:
+                body = preview
+            else:
+                if len(preview) > 0:
+                    body += preview
+                self.cont()
+                body += read_body(self)
+        else:
+            body += read_body(self)
+        # Full content scan
+        if len(body) > 0:
+            result = scan_content(self, body, content_res_scanners, False)
+            stop_after_match = result[0]
+            modified = result[1]
+            if stop_after_match:
+                return
+        # Write body
+        i = 0
+        self.send_headers(True)
+        if len(body) > 0:
+            while i < len(body):
+                self.write_chunk(body[i:i+SND_CHUNK_SIZE])
+                i += SND_CHUNK_SIZE
+        self.write_chunk('')
 
 port = 13440
 

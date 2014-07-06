@@ -1,20 +1,25 @@
 #!/bin/env python
 
 import random
+import re
 import SocketServer
 
 from pyicap import *
 from ConfigParser import SafeConfigParser
+from matching_modules.utils.load_config_file import loadFile
 
 # TODO: eventually have this set by the makefile
 CONFIGFILE = '/home/justinschw/Documents/development/archangel/archangel.conf'
 parser = SafeConfigParser()
 parser.read(CONFIGFILE)
 
+PROGRAM_ROOT = parser.get('app_config', 'programroot')
 MAX_FILE_SCAN = parser.get('app_config', 'max_file_scan')
 BLOCKHOST = parser.get('block_page_config', 'blockpageip') + ':' + \
             parser.get('block_page_config', 'blockpageport')
 SND_CHUNK_SIZE = 8191
+# Get list of scannable mime types
+scannable_media = loadFile(PROGRAM_ROOT + '/lists/scannablemedia')
 
 http_handlers = {}
 http_scanners = {}
@@ -111,6 +116,13 @@ def scan_content(r, body, scanner_list, request):
                 modified = True
     return (False, modified)
 
+def is_scannable(mime_type):
+    for pattern in scannable_media:
+        r = re.search(pattern, mime_type)
+        if r != None:
+            return True
+    return False
+
 class ICAPHandler(BaseICAPRequestHandler):
 
     def example_OPTIONS(self):
@@ -140,6 +152,21 @@ class ICAPHandler(BaseICAPRequestHandler):
         if stop_after_match:
             return
 
+        # Don't scan content of unscannable media
+        if 'content-type' in self.enc_req_headers:
+            for mime_type in self.enc_req_headers['content-type']:
+                if not is_scannable(mime_type):
+                    print "ignoring"
+                    http_handlers['allowpage'].handleRequest(self, None)
+                    return
+
+        # Don't scan content that is too long
+        if 'content-length' in self.enc_req_headers:
+            for length in self.enc_req_headers['content-length']:
+                if length > MAX_FILE_SCAN:
+                    http_handlers['allowpage'].handleRequest(self, None)
+                    return
+
         # Content scanning
         body = ''
         if not self.has_body:
@@ -168,8 +195,9 @@ class ICAPHandler(BaseICAPRequestHandler):
             result = scan_content(self, body, content_req_scanners, True)
             stop_after_match = result[0]
             modified = result[1]
-        if stop_after_match:
-            return
+            if stop_after_match:
+                return
+
         # Write body
         i = 0
         self.send_headers(True)
@@ -181,6 +209,12 @@ class ICAPHandler(BaseICAPRequestHandler):
 
     def example_RESPMOD(self):
         self.set_icap_response(200)
+        # If it's the block page, then allow
+        if 'host' in self.enc_res_headers and \
+           '127.0.0.1:8089' in self.enc_res_headers['host']:
+            print "allowing block page"
+            http_handlers['allowpage'].handleResponse(self, None)
+            return
 
         self.set_enc_status(' '.join(self.enc_res_status))
         for h in self.enc_res_headers:
@@ -193,6 +227,21 @@ class ICAPHandler(BaseICAPRequestHandler):
         modified = result[1]
         if stop_after_match:
             return
+
+        # Don't scan content of unscannable media
+        if 'content-type' in self.enc_res_headers:
+            for mime_type in self.enc_res_headers['content-type']:
+                if not is_scannable(mime_type):
+                    print "ignoring"
+                    http_handlers['allowpage'].handleResponse(self, None)
+                    return
+
+        # Don't scan content that is too big
+        if 'content-length' in self.enc_res_headers:
+            for length in self.enc_res_headers['content-length']:
+                if length > MAX_FILE_SCAN:
+                    http_handlers['allowpage'].handleResponse(self, None)
+                    return
 
         # Content scanning
         body = ''
@@ -224,6 +273,7 @@ class ICAPHandler(BaseICAPRequestHandler):
             modified = result[1]
             if stop_after_match:
                 return
+
         # Write body
         i = 0
         self.send_headers(True)
@@ -232,6 +282,7 @@ class ICAPHandler(BaseICAPRequestHandler):
                 self.write_chunk(body[i:i+SND_CHUNK_SIZE])
                 i += SND_CHUNK_SIZE
         self.write_chunk('')
+
 
 port = 13440
 

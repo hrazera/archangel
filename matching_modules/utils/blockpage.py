@@ -18,10 +18,10 @@ class BlockPage:
         enc_req[0] = 'GET'
         enc_req[1] = self.blockUrl + args
         req.set_enc_request(' '.join(enc_req))
-        if 'content-type' in req.enc_headers:
-            del req.enc_headers['content-type']
-        if 'content-length' in req.enc_headers:
-            del req.enc_headers['content-length']
+        #if 'content-type' in req.enc_headers:
+        #    del req.enc_headers['content-type']
+        #if 'content-length' in req.enc_headers:
+        #    del req.enc_headers['content-length']
         req.send_headers(False)
     def handleResponse(self, res, data):
         # get args for block page

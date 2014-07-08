@@ -156,7 +156,6 @@ class ICAPHandler(BaseICAPRequestHandler):
         if 'content-type' in self.enc_req_headers:
             for mime_type in self.enc_req_headers['content-type']:
                 if not is_scannable(mime_type):
-                    print "ignoring"
                     http_handlers['allowpage'].handleRequest(self, None)
                     return
 
@@ -212,7 +211,6 @@ class ICAPHandler(BaseICAPRequestHandler):
         # If it's the block page, then allow
         if 'host' in self.enc_res_headers and \
            '127.0.0.1:8089' in self.enc_res_headers['host']:
-            print "allowing block page"
             http_handlers['allowpage'].handleResponse(self, None)
             return
 
@@ -232,7 +230,6 @@ class ICAPHandler(BaseICAPRequestHandler):
         if 'content-type' in self.enc_res_headers:
             for mime_type in self.enc_res_headers['content-type']:
                 if not is_scannable(mime_type):
-                    print "ignoring"
                     http_handlers['allowpage'].handleResponse(self, None)
                     return
 

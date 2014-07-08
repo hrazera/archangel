@@ -29,6 +29,9 @@ def loadFile(filename):
     configFile = open(filename)
     for line in configFile:
         line = line.strip()
+        begin_comment = line.find('#')
+        if begin_comment >= 0:
+            line = line[:begin_comment].strip()
         if line == '':
             continue
         elif line[0] == '#':

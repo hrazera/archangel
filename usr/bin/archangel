@@ -1,0 +1,8 @@
+#!/bin/bash
+# This is the script to start the Archangel content filter
+
+PROGRAMROOT=/usr/share/archangel
+
+python $PROGRAMROOT/archangel.py
+
+

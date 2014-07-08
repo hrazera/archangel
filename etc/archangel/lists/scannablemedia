@@ -1,0 +1,6 @@
+# List of MIME types that can be scanned
+# MIME types not in this list will be passed over
+
+text/.*
+application/xml
+application/json

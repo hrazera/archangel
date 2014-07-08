@@ -7,7 +7,6 @@ import SocketServer
 from pyicap import *
 from ConfigParser import SafeConfigParser
 from matching_modules.utils.load_config_file import loadFile
-from matching_modules.utils.urlcache import UrlCache
 
 # TODO: eventually have this set by the makefile
 CONFIGFILE = '/home/justinschw/Documents/development/archangel/archangel.conf'

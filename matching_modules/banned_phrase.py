@@ -45,7 +45,7 @@ class ScanPhrase:
 class BannedPhrase:
     def __init__(self, parser):
         self.ROOT_PREFIX = parser.get('app_config', 'programroot')
-        self.category = "bannedphrase"
+        self.category = "Banned Phrase"
         self.config_file = self.ROOT_PREFIX + "/lists/bannedphraselist"
         self.phrase_list = {}
         strings = loadFile(self.config_file)
@@ -75,8 +75,8 @@ class BannedPhrase:
                     result.category = self.category
                     phrase_string = ''
                     for word in phrase.phrase.words:
-                        phrase_string += word
-                    result.criteria = phrase_string
+                        phrase_string += word + ", "
+                    result.criteria = phrase_string[:-2]
                     return result
                 elif not phrase.active():
                     # Remove from active list

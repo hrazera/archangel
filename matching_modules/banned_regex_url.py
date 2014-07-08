@@ -10,7 +10,7 @@ from utils.matchresult import MatchResult
 class BannedRegexUrl:
     def __init__(self, parser):
         self.ROOT_PREFIX = parser.get('app_config', 'programroot')
-        self.category = "bannedregexurl"
+        self.category = "Banned URL Regex"
         self.config_file = self.ROOT_PREFIX + "/lists/bannedregexpurllist"
         self.regex_list = loadFile(self.config_file)
         self.handler = "blockpage"
@@ -25,7 +25,7 @@ class BannedRegexUrl:
             if match != None:
                 result.matched = True
                 result.category = self.category
-                result.criteria = 'regex'
+                result.criteria = regex
                 return result
         # No match
         return result

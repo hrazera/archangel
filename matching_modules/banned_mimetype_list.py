@@ -11,7 +11,7 @@ from utils.matchresult import MatchResult
 class BannedMimeType:
     def __init__(self, parser):
         self.ROOT_PREFIX = parser.get('app_config', 'programroot')
-        self.category = "Banned mime type"
+        self.category = "Banned Mimetype"
         self.config_file = self.ROOT_PREFIX + "/lists/bannedmimetypelist"
         self.mimetype_list = loadFile(self.config_file)
         self.handler = "blockpage"

@@ -18,7 +18,7 @@
 #to allow part of it.
 
 #To include additional files in this list use this example:
-#.Include</etc/dansguardian/anotherbannedurllist>
+#.Include</etc/archangel/anotherbannedurllist>
 
 #You can have multiple .Includes.
 
@@ -31,29 +31,29 @@ members.home.net/uporn
 # The squidGuard advert domain/URL lists are now included by default.
 # To work with advanced ad blocking & the logadblocks option, advert
 # phrase/site/URL lists should have the string "ADs" in their listcategory.
-.Include</etc/dansguardian/lists/blacklists/ads/urls>
+.Include</etc/archangel/lists/blacklists/ads/urls>
 
 #Remove the # from the following and edit as needed to use a stock
 #squidGuard/urlblacklist blacklists collection.
-#.Include</etc/dansguardian/lists/blacklists/adult/urls>
-#.Include</etc/dansguardian/lists/blacklists/aggressive/urls>
-#.Include</etc/dansguardian/lists/blacklists/audio-video/urls>
-#.Include</etc/dansguardian/lists/blacklists/chat/urls>
-#.Include</etc/dansguardian/lists/blacklists/drugs/urls>
-#.Include</etc/dansguardian/lists/blacklists/entertainment/urls>
-#.Include</etc/dansguardian/lists/blacklists/frencheducation/urls>
-#.Include</etc/dansguardian/lists/blacklists/gambling/urls>
-#.Include</etc/dansguardian/lists/blacklists/government/urls>
-#.Include</etc/dansguardian/lists/blacklists/hacking/urls>
-#.Include</etc/dansguardian/lists/blacklists/jobsearch/urls>
-#.Include</etc/dansguardian/lists/blacklists/kidstimewasting/urls>
-#.Include</etc/dansguardian/lists/blacklists/mail/urls>
-#.Include</etc/dansguardian/lists/blacklists/news/urls>
-#.Include</etc/dansguardian/lists/blacklists/porn/urls>
-#.Include</etc/dansguardian/lists/blacklists/proxy/urls>
-#.Include</etc/dansguardian/lists/blacklists/publicite/urls>
-#.Include</etc/dansguardian/lists/blacklists/redirector/urls>
-#.Include</etc/dansguardian/lists/blacklists/violence/urls>
-#.Include</etc/dansguardian/lists/blacklists/virusinfected/urls>
-#.Include</etc/dansguardian/lists/blacklists/warez/urls>
+#.Include</etc/archangel/lists/blacklists/adult/urls>
+#.Include</etc/archangel/lists/blacklists/aggressive/urls>
+#.Include</etc/archangel/lists/blacklists/audio-video/urls>
+#.Include</etc/archangel/lists/blacklists/chat/urls>
+#.Include</etc/archangel/lists/blacklists/drugs/urls>
+#.Include</etc/archangel/lists/blacklists/entertainment/urls>
+#.Include</etc/archangel/lists/blacklists/frencheducation/urls>
+#.Include</etc/archangel/lists/blacklists/gambling/urls>
+#.Include</etc/archangel/lists/blacklists/government/urls>
+#.Include</etc/archangel/lists/blacklists/hacking/urls>
+#.Include</etc/archangel/lists/blacklists/jobsearch/urls>
+#.Include</etc/archangel/lists/blacklists/kidstimewasting/urls>
+#.Include</etc/archangel/lists/blacklists/mail/urls>
+#.Include</etc/archangel/lists/blacklists/news/urls>
+#.Include</etc/archangel/lists/blacklists/porn/urls>
+#.Include</etc/archangel/lists/blacklists/proxy/urls>
+#.Include</etc/archangel/lists/blacklists/publicite/urls>
+#.Include</etc/archangel/lists/blacklists/redirector/urls>
+#.Include</etc/archangel/lists/blacklists/violence/urls>
+#.Include</etc/archangel/lists/blacklists/virusinfected/urls>
+#.Include</etc/archangel/lists/blacklists/warez/urls>
 # You will need to edit to add and remove categories you want

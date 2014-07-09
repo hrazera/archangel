@@ -38,6 +38,7 @@ def loadFile(filename):
             continue
         elif line[0:9] == '.Include<':
             arr += loadFile(line[9:-1])
+            continue
         arr.append(line)
     return arr
 

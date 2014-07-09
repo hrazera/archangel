@@ -125,7 +125,7 @@ def is_scannable(mime_type):
 
 class ICAPHandler(BaseICAPRequestHandler):
 
-    def example_OPTIONS(self):
+    def archangel_OPTIONS(self):
         self.set_icap_response(200)
         self.set_icap_header('Methods', 'RESPMOD,REQMOD')
         self.set_icap_header('Service', 'PyICAP Server 1.0')
@@ -137,7 +137,7 @@ class ICAPHandler(BaseICAPRequestHandler):
         self.set_icap_header('Options-TTL', '3600')
         self.send_headers(False)
 
-    def example_REQMOD(self):
+    def archangel_REQMOD(self):
         self.set_icap_response(200)
 
         self.set_enc_request(' '.join(self.enc_req))
@@ -206,7 +206,7 @@ class ICAPHandler(BaseICAPRequestHandler):
                 i += SND_CHUNK_SIZE
         self.write_chunk('')
 
-    def example_RESPMOD(self):
+    def archangel_RESPMOD(self):
         self.set_icap_response(200)
         # If it's the block page, then allow
         if 'host' in self.enc_res_headers and \
@@ -281,7 +281,7 @@ class ICAPHandler(BaseICAPRequestHandler):
         self.write_chunk('')
 
 
-port = 13440
+port = int(parser.get('app_config', 'icap_port'))
 
 server = ThreadingSimpleServer(('', port), ICAPHandler)
 try:

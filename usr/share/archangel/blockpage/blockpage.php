@@ -1,3 +1,7 @@
+<?php
+  $config = parse_ini_file('/etc/archangel/archangel.conf');
+  $blockpage=$config["blockpageip"] . ':' . $config['blockpageport'];
+?>
 <html>
 <title>Archangel - Block Page</title>
 <body bgcolor="#0B0B3B">
@@ -9,7 +13,7 @@
     </tr>
     <tr>
       <td width=400 style="border:3px solid black">
-	<img src="images/archangel.jpg">
+	<img src="http://<?php echo $blockpage; ?>/images/archangel.jpg">
       </td>
       <td style="border:3px solid black" bgcolor="white" valign="top">
 	<center>

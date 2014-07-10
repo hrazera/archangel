@@ -14,7 +14,7 @@ class BlockPage:
         self.logFileName = parser.get('app_config', 'logfile')
         self.log = logging.getLogger('blockpage')
         self.log.setLevel(logging.INFO)
-        formatter = logging.Formatter('[%(levelname)s] %(message)s')
+        formatter = logging.Formatter('%(asctime)s - [%(levelname)s] %(message)s')
         handler_stream = logging.StreamHandler()
         handler_stream.setLevel(logging.INFO)
         self.log.addHandler(handler_stream)

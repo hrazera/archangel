@@ -1,27 +1,30 @@
 #!/bin/bash
 
-PROG="archangel.py"
+# load config file
+. etc/archangel/archangel.conf > /dev/null 2>&1
+
+PROG="archangel"
 PROG_PATH="/usr/share/archangel"
 PID_PATH="/var/run/"
 BLOCKPAGE_PROC="blockpage"
-BLOCKPAGE_IP="127.0.0.1"
-BLOCKPAGE_PORT="8089"
-BLOCKPAGE_PATH="/usr/share/archangel/blockpage"
+BLOCKPAGE_IP=$blockpageip
+BLOCKPAGE_PORT=$blockpageport
+BLOCKPAGE_PATH="$blockpagedir"
 
 start() {
     if [ -e "$PID_PATH/$PROG.pid" ]; then
-        ## Program is running, exit with error.
-        echo "Error! $PROG is currently running!" 1>&2
+        # Program is running, exit with error.
+        echo "Error: $PROG is currently running!" 1>&2
         exit 1
     else
-	python $PROG_PATH/$PROG 2>&1 >/dev/null &
+	python $PROG_PATH/$PROG.py >/dev/null 2>&1 &
         echo $! > "$PID_PATH/$PROG.pid"
         echo "$PROG started"
 	if [ -e "$PID_PATH/$BLOCKPAGE_PROC.pid" ]; then
 	    kill `cat $PID_PATH/$BLOCKPAGE_PROC.pid`
 	    rm $PID_PATH/$BLOCKPAGE_PROC.pid
 	fi
-	php -S "$BLOCKPAGE_IP:$BLOCKPAGE_PORT" -t $BLOCKPAGE_PATH 2>&1 >/dev/null &
+	php -S "$BLOCKPAGE_IP:$BLOCKPAGE_PORT" -t $BLOCKPAGE_PATH >/dev/null 2>&1 &
 	echo $! > "$PID_PATH/$BLOCKPAGE_PROC.pid"
     fi
 }
@@ -34,19 +37,18 @@ stop() {
     fi
 
     if [ -e "$PID_PATH/$PROG.pid" ]; then
-        ## Program is running, so stop it
+        # Program is running, so stop it
         kill `cat $PID_PATH/$PROG.pid`
         rm "$PID_PATH/$PROG.pid"
         echo "$PROG stopped"
     else
-        ## Program is not running, exit with error.
-        echo "Error! $PROG not started!" 1>&2
+        # Program is not running, exit with error.
+        echo "Error: $PROG not started!" 1>&2
         exit 1
     fi
 }
 
-## Check to see if we are running as root first.
-## Found at http://www.cyberciti.biz/tips/shell-root-user-check-script.html
+# Check to see if we are running as root first.
 if [ "$(id -u)" != "0" ]; then
     echo "This script must be run as root" 1>&2
     exit 1

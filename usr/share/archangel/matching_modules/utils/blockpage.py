@@ -2,6 +2,7 @@
 import urllib2
 import urllib
 import logging
+from logging import handlers
 
 CHUNK_SIZE = 1024
 
@@ -17,7 +18,12 @@ class BlockPage:
         handler_stream = logging.StreamHandler()
         handler_stream.setLevel(logging.INFO)
         self.log.addHandler(handler_stream)
-        handler_file = logging.FileHandler(self.logFileName)
+        handler_file = \
+            logging.handlers.RotatingFileHandler( \
+                self.logFileName, 'a', \
+                parser.get('app_config', 'logfile_max_size'), \
+                parser.get('app_config', 'logfile_backup_count'))
+        #handler_file = logging.FileHandler(self.logFileName)
         handler_file.setFormatter(formatter)
         self.log.addHandler(handler_file)
     def handleRequest(self, req, data):

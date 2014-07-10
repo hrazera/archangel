@@ -19,7 +19,7 @@ class BannedRegexUrl:
     # Scan algorithm
     def scan(self, request):
         result = MatchResult()
-        url = request.enc_req[1]
+        url = request.enc_req[1].lower()
         for regex in self.regex_list:
             match = re.search(regex, url)
             if match != None:

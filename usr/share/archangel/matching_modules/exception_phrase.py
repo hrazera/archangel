@@ -30,9 +30,10 @@ class ExceptionPhrase:
         self.scan_chunks = True
     # Scan algorithm
     def scan(self, chunk):
+        body = chunk.lower()
         result = MatchResult()
         active_phrases = []
-        for char in chunk:
+        for char in body:
             # First advance activated phrases
             for phrase in active_phrases:
                 phrase.advance(char)

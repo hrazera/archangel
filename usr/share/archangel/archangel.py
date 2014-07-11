@@ -1,8 +1,9 @@
-#!/bin/env python
+1#!/bin/env python
 
 import random
 import re
 import SocketServer
+import zlib
 
 from pyicap import *
 from ConfigParser import SafeConfigParser
@@ -166,6 +167,11 @@ class ICAPHandler(BaseICAPRequestHandler):
                     http_handlers['allowpage'].handleRequest(self, None)
                     return
 
+        # Is content encoded?
+        encoding = ''
+        if 'content-encoding' in self.enc_req_headers:
+            encoding = self.enc_req_headers['content-encoding'][0]
+
         # Content scanning
         body = ''
         if not self.has_body:
@@ -175,7 +181,10 @@ class ICAPHandler(BaseICAPRequestHandler):
             preview = read_body(self)
             # Preliminary (preview) scan
             if len(body) > 0:
-                result = scan_content(self, body, content_req_scanners, True)
+                scan_body = body
+                if encoding == 'gzip':
+                    scan_body = zlib.decompress(scan_body, 16+zlib.MAX_WBITS)
+                result = scan_content(self, scan_body, content_req_scanners, True)
                 stop_after_match = result[0]
                 modified = result[1]
                 if stop_after_match:
@@ -191,7 +200,10 @@ class ICAPHandler(BaseICAPRequestHandler):
             body += read_body(self)
         # Full content scan
         if len(body) > 0:
-            result = scan_content(self, body, content_req_scanners, True)
+            scan_body = body
+            if encoding == 'gzip':
+                scan_body = zlib.decompress(scan_body, 16+zlib.MAX_WBITS)
+            result = scan_content(self, scan_body, content_req_scanners, True)
             stop_after_match = result[0]
             modified = result[1]
             if stop_after_match:
@@ -240,6 +252,11 @@ class ICAPHandler(BaseICAPRequestHandler):
                     http_handlers['allowpage'].handleResponse(self, None)
                     return
 
+        # Is content encoded?
+        encoding = ''
+        if 'content-encoding' in self.enc_res_headers:
+            encoding = self.enc_res_headers['content-encoding'][0]
+
         # Content scanning
         body = ''
         if not self.has_body:
@@ -249,7 +266,11 @@ class ICAPHandler(BaseICAPRequestHandler):
             preview = read_body(self)
             # Preliminary scan
             if len(body) > 0:
-                result = scan_content(self, body, content_res_scanners, False)
+                # decode content
+                scan_body = body
+                if encoding == 'gzip':
+                    scan_body = zlib.decompress(scan_body, 16+zlib.MAX_WBITS)
+                result = scan_content(self, scan_body, content_res_scanners, False)
                 stop_after_match = result[0]
                 modified = result[1]
                 if stop_after_match:
@@ -265,7 +286,11 @@ class ICAPHandler(BaseICAPRequestHandler):
             body += read_body(self)
         # Full content scan
         if len(body) > 0:
-            result = scan_content(self, body, content_res_scanners, False)
+            # decode content
+            scan_body = body
+            if encoding == 'gzip':
+                scan_body = zlib.decompress(scan_body, 16+zlib.MAX_WBITS)
+            result = scan_content(self, scan_body, content_res_scanners, False)
             stop_after_match = result[0]
             modified = result[1]
             if stop_after_match:

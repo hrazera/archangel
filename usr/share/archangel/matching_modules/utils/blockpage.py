@@ -48,7 +48,7 @@ class BlockPage:
         req.send_headers(False)
     def handleResponse(self, res, data):
         # log block page
-        res_url = res.enc_headers['host'][0]
+        res_url = res.enc_req[1]
         self.log.info('Blocked content: ' + res_url + ' category: "' \
                  + data.category + '" criteria: ' + data.criteria)
         # get args for block page

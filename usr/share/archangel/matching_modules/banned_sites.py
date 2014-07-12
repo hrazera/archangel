@@ -3,7 +3,6 @@
 import re
 
 from utils.load_config_file import loadFile
-from utils.blockpage import BlockPage
 from utils.matchresult import MatchResult
 
 
@@ -29,11 +28,12 @@ class BannedSites:
             # No host in headers
             return result
         for host in hosts:
-            if host.strip() in self.host_list:
-                result.matched = True
-                result.category = self.category
-                result.criteria = host
-                return result
+            for banned_host in self.host_list:
+                if banned_host.strip() in host.strip():
+                    result.matched = True
+                    result.category = self.category
+                    result.criteria = host
+                    return result
         # No match
         return result
     # Dummy method

@@ -2,7 +2,7 @@ from ConfigParser import SafeConfigParser
 from banned_phrase import BannedPhrase
 
 parser = SafeConfigParser()
-parser.read('../archangel.conf')
+parser.read('/etc/archangel/archangel.conf')
 
 bp = BannedPhrase(parser)
 chunk = "The quick brown fox jumped over the lazy dog"

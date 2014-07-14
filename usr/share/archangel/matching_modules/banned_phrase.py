@@ -7,39 +7,26 @@ from utils.blockpage import BlockPage
 from utils.matchresult import MatchResult
 from utils.load_config_file import Phrase
 
-class ScanPhrase:
-    def __init__(self, phrase):
-        self.words = []
+class WordMap:
+    def __init__(self):
+        self.words = {}
+        self.sorted = []
+    def add(self, phrase):
         for word in phrase.words:
-            self.words.append((word, 0))
-        self.phrase = phrase
-    def advance(self, char):
-        result = False
-        for i in range(0, len(self.words)):
-            word = self.words[i][0]
-            pos = self.words[i][1]
-            if pos >= len(word):
-                result = True
-                continue
-            if word[pos] == char:
-                self.words[i] = (word, pos + 1)
-                result = True
+            if not word in self.words:
+                self.words[word] = [phrase]
             else:
-                self.words[i] = (word, 0)
-        return result
-    def matched(self):
-        result = True
-        for item in self.words:
-            word = item[0]
-            pos = item[1]
-            if pos < len(word):
-                result = False
-        return result
-    def active(self):
+                self.words[word].append(phrase)
+            i = 0
+    def sort(self):
+        del self.sorted[:]
         for word in self.words:
-            if word[1] > 0:
-                return True
-        return False
+            i = 0
+            for word2 in self.sorted:
+                if len(self.words[word2]) <= len(self.words[word]):
+                    break
+                i += 1
+            self.sorted.insert(i, word)
 
 # API definitions starts here
 class BannedPhrase:
@@ -47,53 +34,38 @@ class BannedPhrase:
         self.ROOT_PREFIX = parser.get('app_config', 'confdir')
         self.category = "Banned Phrase"
         self.config_file = self.ROOT_PREFIX + "/lists/bannedphraselist"
-        self.phrase_list = {}
+        self.wordMap = WordMap()
         strings = loadFile(self.config_file)
         for string in strings:
             phrase = Phrase()
             phrase.addPhrase(string)
-            phrase_key = phrase.getKey()
-            for char in phrase_key:
-                if not char in self.phrase_list:
-                    self.phrase_list[char] = []
-                self.phrase_list[char].append(phrase)
+            self.wordMap.add(phrase)
+        self.wordMap.sort()
         self.handler = "blockpage"
         # Stop as soon as a match is found
         self.stop_after_match = True
         # Scan each chunk individually
         self.scan_chunks = True
+        
     # Scan algorithm
     def scan(self, chunk):
         body = chunk.lower()
         result = MatchResult()
-        active_phrases = []
-        for char in body:
-            # First advance activated phrases
-            for phrase in active_phrases:
-                phrase.advance(char)
-                if phrase.matched():
-                    result.matched = True
-                    result.category = self.category
-                    phrase_string = ''
-                    for word in phrase.phrase.words:
-                        phrase_string += word + ", "
-                    result.criteria = phrase_string[:-2]
-                    return result
-                elif not phrase.active():
-                    # Remove from active list
-                    active_phrases.remove(phrase)
-            # Now activate any inactive phrases that match this character
-            if char in self.phrase_list:
-                for phrase in self.phrase_list[char]:
-                    is_active = False
-                    for scan_phrase in active_phrases:
-                        if scan_phrase.phrase == phrase:
-                            is_active = True
-                    if not is_active:
-                        # Add to active phrases
-                        scan_phrase = ScanPhrase(phrase)
-                        scan_phrase.advance(char)
-                        active_phrases.append(scan_phrase)
+        phraseCounts = {}
+        for word in self.wordMap.sorted:
+            if re.search(word, body):
+                for phrase in self.wordMap.words[word]:
+                    if not phrase in phraseCounts:
+                        phraseCounts[phrase] = 1
+                    else:
+                        phraseCounts[phrase] += 1
+                    if phraseCounts[phrase] == len(phrase.words):
+                        result.matched = True
+                        result.category = self.category
+                        phrase_string = ''
+                        for word in phrase.words:
+                            phrase_string += word + ', '
+                        result.criteria = phrase_string[:-2]
         # No match
         return result
     # Dummy method

@@ -19,20 +19,13 @@ class BannedExtensions:
     # Scan algorithm
     def scan(self, request):
         result = MatchResult()
-        url = request.enc_req[1]
-        ext_start = url.find('.')
-        if ext_start == -1:
-            # No extension
-            return result
-        extension = url[ext_start:]
-        while ext_start != -1:
-            extension = extension[ext_start+1:]
-            ext_start = extension[1:].find('.')
-        if extension in self.extension_list:
-            result.matched = True
-            result.category = self.category
-            result.criteria = extension
-            return result
+        url = request.enc_req[1].lower()
+        for banned_extension in self.extension_list:
+            if banned_extension in url:
+                result.matched = True
+                result.category = self.category
+                result.criteria = banned_extension
+                return result
         # No match
         return result
     # Dummy method

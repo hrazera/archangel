@@ -1,4 +1,4 @@
-# Module for blocking youtube videos based on a given criteria
+1# Module for blocking youtube videos based on a given criteria
 
 import re
 import urllib2
@@ -26,6 +26,9 @@ class BannedYoutube:
         if m != None:
             vid_id = url[m.start(0):m.end(0)][-11:]
         m = re.search('youtube.com/v/(.){11}', url)
+        if m != None:
+            vid_id = url[m.start(0):m.end(0)][-11:]
+        m = re.search('(ytimg|youtube).com/vi/(.){11}', url)
         if m != None:
             vid_id = url[m.start(0):m.end(0)][-11:]
         if vid_id == '':

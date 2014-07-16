@@ -1,6 +1,7 @@
 # Module for blocking banned extensions
 
 import re
+import urlparse, os
 
 from utils.load_config_file import loadFile
 from utils.blockpage import BlockPage
@@ -20,12 +21,14 @@ class BannedExtensions:
     def scan(self, request):
         result = MatchResult()
         url = request.enc_req[1].lower()
-        for banned_extension in self.extension_list:
-            if banned_extension in url:
-                result.matched = True
-                result.category = self.category
-                result.criteria = banned_extension
-                return result
+        path = urlparse.urlparse(url).path
+        parts = os.path.splitext(path)
+        ext = parts[len(parts)-1]
+        if ext in self.extension_list:
+            result.matched = True
+            result.category = self.category
+            result.criteria = ext
+            return result
         # No match
         return result
     # Dummy method

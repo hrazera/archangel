@@ -4,3 +4,4 @@
 text/.*
 application/xml
 application/json
+application/x-javascript

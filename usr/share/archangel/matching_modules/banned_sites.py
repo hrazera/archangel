@@ -28,8 +28,20 @@ class BannedSites:
             # No host in headers
             return result
         for host in hosts:
+            req_host_parts = host.split('.')
+            req_host_parts.reverse()
             for banned_host in self.host_list:
-                if banned_host.strip() in host.strip():
+                banned_host_parts = banned_host.split('.')
+                banned_host_parts.reverse()
+                if len(banned_host_parts) > len(req_host_parts):
+                    # req host is not a subdomain of banned host
+                    continue
+                matched = True
+                for i in range(0, len(banned_host_parts)):
+                    if banned_host_parts[i] != req_host_parts[i]:
+                        # No match
+                        matched = False
+                if matched:
                     result.matched = True
                     result.category = self.category
                     result.criteria = host
